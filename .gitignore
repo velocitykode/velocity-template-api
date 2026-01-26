@@ -1,0 +1,37 @@
+# Environment
+.env
+.env.local
+
+# Database
+database/*.sqlite
+database/*.sqlite-shm
+database/*.sqlite-wal
+
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+/vel
+velocity-*
+!velocity-*.go
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Hot Reload
+tmp/
+.vel/
+
+# Logs
+*.log
+storage/logs/*
+!storage/logs/.gitkeep
