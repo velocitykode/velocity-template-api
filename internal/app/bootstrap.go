@@ -40,6 +40,7 @@ func Run() {
 
 // initialize bootstraps all application services
 func initialize() error {
+	initEvents()
 	if err := initCrypto(); err != nil {
 		return err
 	}
