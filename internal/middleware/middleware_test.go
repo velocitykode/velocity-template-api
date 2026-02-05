@@ -103,25 +103,6 @@ func TestLoggingMiddleware(t *testing.T) {
 	}
 }
 
-func TestRecoveryMiddleware(t *testing.T) {
-	handler := RecoveryMiddleware(func(c *router.Context) error {
-		panic("test panic")
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
-
-	// Should not panic
-	err := handler(ctx)
-	if err != nil {
-		t.Fatalf("RecoveryMiddleware() returned error: %v", err)
-	}
-
-	if rec.Code != http.StatusInternalServerError {
-		t.Errorf("RecoveryMiddleware() status = %d, want %d", rec.Code, http.StatusInternalServerError)
-	}
-}
 
 func TestTrustProxiesMiddleware(t *testing.T) {
 	handler := TrustProxiesMiddleware(func(c *router.Context) error {

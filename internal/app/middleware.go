@@ -23,7 +23,6 @@ func GetMiddlewareStacks() *MiddlewareStacks {
 // globalMiddleware returns middleware that runs for ALL requests
 func globalMiddleware() []router.MiddlewareFunc {
 	return []router.MiddlewareFunc{
-		middleware.RecoveryMiddleware,                         // Catch panics and return 500
 		middleware.LoggingMiddleware,                          // Log all requests
 		middleware.TrustProxiesMiddleware,                     // Handle X-Forwarded-* headers
 		middleware.CORSMiddleware,                             // Handle CORS preflight and headers
