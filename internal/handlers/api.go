@@ -13,7 +13,7 @@ import (
 
 // Health returns the API health status
 func Health(ctx *router.Context) error {
-	return ctx.JSON(http.StatusOK, map[string]string{
+	return ctx.JSON(router.StatusOK, map[string]string{
 		"status": "healthy",
 	})
 }
