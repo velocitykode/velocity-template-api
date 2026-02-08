@@ -78,7 +78,7 @@ jobs:
 
       - name: Replace module placeholder
         if: steps.check.outputs.skip == 'false'
-        run: sed -i 's|{{MODULE_NAME}}|velocity-api|g' go.mod
+        run: find . -type f \( -name '*.go' -o -name 'go.mod' \) -exec sed -i 's|{{MODULE_NAME}}|velocity-api|g' {} +
 
       - name: Build Go binary
         if: steps.check.outputs.skip == 'false'
