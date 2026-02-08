@@ -1,0 +1,116 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "*.md"
+      - ".github/**"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if release needed
+        id: check
+        run: |
+          LAST_MSG=$(git log -1 --pretty=%B)
+          if echo "$LAST_MSG" | grep -q "^Bump version\|^chore:"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate version
+        if: steps.check.outputs.skip == 'false'
+        id: version
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+
+          COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
+
+          VERSION=${LAST_TAG#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+
+          HAS_BREAKING=false
+          HAS_FEAT=false
+
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            if echo "$msg" | grep -qiE "BREAKING|!:"; then
+              HAS_BREAKING=true
+            fi
+            if echo "$msg" | grep -qiE "^feat|^add"; then
+              HAS_FEAT=true
+            fi
+          done <<< "$COMMITS"
+
+          if [ "$HAS_BREAKING" = true ]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [ "$HAS_FEAT" = true ]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEW="$MAJOR.$MINOR.$PATCH"
+          echo "new=$NEW" >> $GITHUB_OUTPUT
+          echo "Bumping version: $LAST_TAG -> v$NEW"
+
+      - name: Set up Go
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Replace module placeholder
+        if: steps.check.outputs.skip == 'false'
+        run: sed -i 's|{{MODULE_NAME}}|velocity-api|g' go.mod
+
+      - name: Build Go binary
+        if: steps.check.outputs.skip == 'false'
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 0
+        run: |
+          go mod tidy
+          go build -o app .
+
+      - name: Package release artifact
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          tar czf velocity-api-linux-amd64.tar.gz \
+            app \
+            database/ \
+            storage/ \
+            .env.example
+
+      - name: Tag and release
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.version.outputs.new }}"
+          git push origin "v${{ steps.version.outputs.new }}"
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.skip == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.new }}
+          generate_release_notes: true
+          files: velocity-api-linux-amd64.tar.gz
