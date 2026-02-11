@@ -1,72 +1,32 @@
 package app
 
 import (
-	"net/http"
-	"os"
-
 	"{{MODULE_NAME}}/config"
 
-	"github.com/joho/godotenv"
+	"github.com/velocitykode/velocity"
 	"github.com/velocitykode/velocity/pkg/auth"
 	"github.com/velocitykode/velocity/pkg/auth/drivers/guards"
-	"github.com/velocitykode/velocity/pkg/crypto"
-	"github.com/velocitykode/velocity/pkg/log"
-	"github.com/velocitykode/velocity/pkg/orm"
 )
 
-func init() {
-	godotenv.Load()
-}
-
-// Run starts the application
-func Run() {
-	log.Info("Velocity API Server")
-
-	if err := initialize(); err != nil {
-		log.Error("Failed to initialize application", "error", err)
-		os.Exit(1)
+// Bootstrap configures app-specific services on the Velocity app instance.
+// Core services (crypto, ORM, logger, cache, events, queue, storage) are
+// already initialized by velocity.Default().
+func Bootstrap(v *velocity.App) error {
+	// 1. Register auth guards (app-specific: session guard with user model)
+	if err := bootstrapAuth(v); err != nil {
+		return err
 	}
 
-	httpKernel := New()
-	httpKernel.Bootstrap()
-
-	port := config.GetPort()
-	log.Info("Server starting", "port", port)
-
-	if err := http.ListenAndServe(":"+port, httpKernel.Handler()); err != nil {
-		log.Error("Server failed to start", "error", err)
-	}
-}
-
-// initialize bootstraps all application services
-func initialize() error {
+	// 2. Register event listeners (app-specific)
 	initEvents()
-	if err := initCrypto(); err != nil {
-		return err
-	}
-	if err := orm.InitFromEnv(); err != nil {
-		return err
-	}
-	return initAuth()
-}
 
-func initCrypto() error {
-	key := config.GetCryptoKey()
-	if key != "" {
-		return crypto.Init(crypto.Config{
-			Key:    key,
-			Cipher: config.GetCryptoCipher(),
-		})
-	}
+	// 3. Apply middleware to the router
+	bootstrapMiddleware(v)
+
 	return nil
 }
 
-func initAuth() error {
-	manager, err := auth.GetManager()
-	if err != nil {
-		return err
-	}
-
+func bootstrapAuth(v *velocity.App) error {
 	sessionConfig := auth.NewSessionConfigFromEnv()
 	provider := auth.NewORMUserProvider(config.GetAuthModel())
 	sessionGuard, err := guards.NewSessionGuard(provider, sessionConfig)
@@ -74,6 +34,17 @@ func initAuth() error {
 		return err
 	}
 
-	manager.RegisterGuard(config.GetAuthGuard(), sessionGuard)
+	v.Auth.RegisterGuard(config.GetAuthGuard(), sessionGuard)
 	return nil
+}
+
+func bootstrapMiddleware(v *velocity.App) {
+	stacks := GetMiddlewareStacks()
+
+	for _, mw := range stacks.Global {
+		v.Router.Use(mw)
+	}
+	for _, mw := range stacks.API {
+		v.Router.Use(mw)
+	}
 }
