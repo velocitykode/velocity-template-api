@@ -7,7 +7,6 @@ import (
 	"{{MODULE_NAME}}/internal/models"
 
 	"github.com/velocitykode/velocity/pkg/auth"
-	"github.com/velocitykode/velocity/pkg/log"
 	"github.com/velocitykode/velocity/pkg/router"
 )
 
@@ -22,7 +21,7 @@ func Health(ctx *router.Context) error {
 func ListUsers(ctx *router.Context) error {
 	users, err := models.User{}.All()
 	if err != nil {
-		log.Error("Failed to fetch users", "error", err)
+		ctx.Log().Error("Failed to fetch users", "error", err)
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to fetch users",
 		})
@@ -85,7 +84,7 @@ func CreateUser(ctx *router.Context) error {
 	}
 
 	// Hash password
-	hashedPassword, err := auth.Hash(input.Password)
+	hashedPassword, err := auth.FromContext(ctx).Hash(input.Password)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to process password",
@@ -99,7 +98,7 @@ func CreateUser(ctx *router.Context) error {
 		"password": hashedPassword,
 	})
 	if err != nil {
-		log.Error("Failed to create user", "error", err)
+		ctx.Log().Error("Failed to create user", "error", err)
 		return ctx.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to create user",
 		})
@@ -112,7 +111,7 @@ func CreateUser(ctx *router.Context) error {
 
 // GetCurrentUser returns the authenticated user
 func GetCurrentUser(ctx *router.Context) error {
-	user := auth.User(ctx.Request)
+	user := auth.FromContext(ctx).User(ctx.Request)
 	if user == nil {
 		return ctx.JSON(http.StatusUnauthorized, map[string]string{
 			"error": "Not authenticated",

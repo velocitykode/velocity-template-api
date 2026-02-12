@@ -18,7 +18,7 @@ func Bootstrap(v *velocity.App) error {
 	}
 
 	// 2. Register event listeners (app-specific)
-	initEvents()
+	initEvents(v)
 
 	// 3. Apply middleware to the router
 	bootstrapMiddleware(v)

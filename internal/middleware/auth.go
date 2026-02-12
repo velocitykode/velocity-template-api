@@ -10,7 +10,7 @@ import (
 // Auth returns 401 Unauthorized if not authenticated
 func Auth(next router.HandlerFunc) router.HandlerFunc {
 	return func(ctx *router.Context) error {
-		if !auth.Check(ctx.Request) {
+		if !auth.FromContext(ctx).Check(ctx.Request) {
 			return ctx.JSON(http.StatusUnauthorized, map[string]string{
 				"error": "Unauthorized",
 			})
