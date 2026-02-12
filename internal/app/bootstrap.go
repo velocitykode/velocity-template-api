@@ -27,14 +27,15 @@ func Bootstrap(v *velocity.App) error {
 }
 
 func bootstrapAuth(v *velocity.App) error {
+	authManager := v.Auth.(*auth.Manager)
 	sessionConfig := auth.NewSessionConfigFromEnv()
-	provider := auth.NewORMUserProvider(config.GetAuthModel())
-	sessionGuard, err := guards.NewSessionGuard(provider, sessionConfig)
+	provider := auth.NewORMUserProvider(v.DB.DB(), config.GetAuthModel(), authManager.GetHasher())
+	sessionGuard, err := guards.NewSessionGuard(provider, sessionConfig, v.Crypto)
 	if err != nil {
 		return err
 	}
 
-	v.Auth.RegisterGuard(config.GetAuthGuard(), sessionGuard)
+	authManager.RegisterGuard(config.GetAuthGuard(), sessionGuard)
 	return nil
 }
 

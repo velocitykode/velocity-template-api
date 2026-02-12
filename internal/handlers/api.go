@@ -92,7 +92,7 @@ func CreateUser(ctx *router.Context) error {
 	}
 
 	// Create user
-	user, err := models.User{}.Create(map[string]any{
+	user, err := models.User{}.Create(ctx.DB(), map[string]any{
 		"name":     input.Name,
 		"email":    input.Email,
 		"password": hashedPassword,
