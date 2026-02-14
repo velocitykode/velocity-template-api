@@ -3,7 +3,7 @@ package app
 import (
 	"{{MODULE_NAME}}/internal/middleware"
 
-	"github.com/velocitykode/velocity/pkg/router"
+	"github.com/velocitykode/velocity/router"
 )
 
 // MiddlewareStacks defines all middleware stacks for the application
