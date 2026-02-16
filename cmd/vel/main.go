@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/velocitykode/vel"
+	"github.com/velocitykode/velocity-cli"
 
 	// Import project packages to register with CLI
 	_ "{{MODULE_NAME}}/internal/app"
