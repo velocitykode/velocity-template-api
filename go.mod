@@ -5,7 +5,6 @@ go 1.25.7
 require (
 	github.com/joho/godotenv v1.5.1
 	github.com/velocitykode/velocity v0.20.3
-	github.com/velocitykode/velocity-cli v0.9.0
 )
 
 require (
