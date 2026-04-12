@@ -28,7 +28,6 @@ velocity-*
 Thumbs.db
 
 # Hot Reload
-tmp/
 .vel/
 
 # Logs
