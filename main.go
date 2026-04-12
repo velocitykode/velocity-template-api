@@ -7,6 +7,10 @@ import (
 	"{{MODULE_NAME}}/routes"
 
 	"github.com/velocitykode/velocity"
+
+	// Blank import so each migration file's init() runs and calls
+	// migrate.Register() — otherwise `vel migrate` finds nothing.
+	_ "{{MODULE_NAME}}/database/migrations"
 )
 
 func main() {
