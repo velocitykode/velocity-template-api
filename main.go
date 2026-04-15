@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"{{MODULE_NAME}}/internal/app"
 	"{{MODULE_NAME}}/routes"
@@ -19,13 +20,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := app.Bootstrap(v); err != nil {
-		log.Fatal(err)
+	chain := v.
+		Providers(app.Configure).
+		Middleware(app.Middleware).
+		Routes(routes.Register).
+		Events(app.Events(v.Log))
+
+	// With CLI args (`vel migrate`, `vel make:handler`, ...) dispatch
+	// the command. Routes are still registered above so `vel route:list`
+	// sees them.
+	if len(os.Args) > 1 {
+		if err := chain.Run(); err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 
-	routes.Register(v)
-
-	if err := v.Run(); err != nil {
+	// No args - start the HTTP server.
+	if err := chain.Serve(); err != nil {
 		log.Fatal(err)
 	}
 }
