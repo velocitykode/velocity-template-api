@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/velocitykode/velocity"
 	"github.com/velocitykode/velocity/cache"
 	"github.com/velocitykode/velocity/events"
+	"github.com/velocitykode/velocity/log"
 	"github.com/velocitykode/velocity/orm"
 	"github.com/velocitykode/velocity/router"
 )
@@ -19,12 +19,14 @@ func on(d events.Dispatcher, event string, fn func(event interface{}) error) {
 	d.Listen(event, listenerFunc(fn))
 }
 
-// initEvents registers event listeners for framework observability.
+// Events registers event listeners for framework observability.
+// main.go calls Events(v.Log) once at bootstrap and passes the returned
+// callback to v.Events(...). The closure captures the logger so listeners
+// can call it without reaching back through the app.
+//
 // Customize these listeners to add your own logging, metrics, or tracing.
-func initEvents(v *velocity.App) {
-	logger := v.Log
-
-	v.Events(func(d events.Dispatcher) {
+func Events(logger log.Logger) func(events.Dispatcher) {
+	return func(d events.Dispatcher) {
 		// Request lifecycle events
 		on(d, "request.started", func(e interface{}) error {
 			if req, ok := e.(*router.RequestStarted); ok {
@@ -87,5 +89,5 @@ func initEvents(v *velocity.App) {
 			}
 			return nil
 		})
-	})
+	}
 }
