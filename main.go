@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"{{MODULE_NAME}}/internal/app"
+	"{{MODULE_NAME}}/internal/commands"
 	"{{MODULE_NAME}}/routes"
 
 	"github.com/velocitykode/velocity"
@@ -20,24 +20,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	chain := v.
+	if err := v.
 		Providers(app.Configure).
 		Middleware(app.Middleware).
 		Routes(routes.Register).
-		Events(app.Events(v.Log))
-
-	// With CLI args (`vel migrate`, `vel make:handler`, ...) dispatch
-	// the command. Routes are still registered above so `vel route:list`
-	// sees them.
-	if len(os.Args) > 1 {
-		if err := chain.Run(); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
-
-	// No args - start the HTTP server.
-	if err := chain.Serve(); err != nil {
+		Commands(commands.Register).
+		Events(app.Events(v.Log)).
+		Serve(); err != nil {
 		log.Fatal(err)
 	}
 }
