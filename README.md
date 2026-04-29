@@ -1,51 +1,39 @@
-# Velocity API Template
+# Velocity Template - API
 
-API-only project template for the [Velocity](https://github.com/velocitykode/velocity) Go web framework.
+API-only starter template for the [Velocity](https://github.com/velocitykode/velocity) Go web framework. JSON REST, no frontend bundle.
 
-## Stack
-
-- **Backend**: Velocity Go Framework
-- **API Format**: JSON REST API
-
-## Usage
-
-This template is used automatically by the Velocity CLI with the `--api` flag:
+This repo is a **template** consumed by the Velocity installer. To start a new project:
 
 ```bash
 velocity new myapi --api
-cd myapi
-./vel serve
 ```
 
-## Development Commands
+The installer clones this template, rewrites the module placeholders, installs dependencies, builds the project's `vel` binary, and runs the initial migrations.
 
-```bash
-# Start development server with hot reload
-./vel serve
+## Stack
 
-# Run database migrations
-./vel migrate
+- **Backend**: Velocity Go framework
+- **API format**: JSON REST
+- **Auth**: JWT (`AUTH_JWT_*` env)
 
-# Generate a new controller
-./vel make:controller User
+## Example Endpoints
 
-# Build for production
-./vel build
-```
+The scaffolded project ships with these routes wired up:
 
-## API Endpoints
-
-The template includes example API endpoints:
-
-- `GET /api/health` - Health check
-- `GET /api/users` - List users (requires auth)
-- `POST /api/users` - Create user
-- `GET /api/users/:id` - Get user (requires auth)
-- `GET /api/me` - Get current user (requires auth)
+- `GET /api/health` - health check
+- `GET /api/users` - list users (auth required)
+- `POST /api/users` - create user
+- `GET /api/users/:id` - fetch user (auth required)
+- `GET /api/me` - current user (auth required)
 
 ## Documentation
 
 Full documentation at **[velocity.velocitykode.com/docs](https://velocity.velocitykode.com/docs)**
+
+## Sibling Templates
+
+- [`velocity-template-react`](https://github.com/velocitykode/velocity-template-react) - React 19 + Inertia.js
+- [`velocity-template-vue`](https://github.com/velocitykode/velocity-template-vue) - Vue 3 + Inertia.js (with SSR)
 
 ## License
 
