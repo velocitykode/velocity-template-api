@@ -12,5 +12,5 @@ func GetAppEnv() string {
 
 // GetPort returns the port (read at call time)
 func GetPort() string {
-	return envOr("PORT", "4000")
+	return envOr("APP_PORT", "4000")
 }
