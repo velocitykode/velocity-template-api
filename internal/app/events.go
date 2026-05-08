@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+
 	"github.com/velocitykode/velocity/cache"
 	"github.com/velocitykode/velocity/events"
 	"github.com/velocitykode/velocity/log"
@@ -9,13 +11,18 @@ import (
 )
 
 // listenerFunc adapts a plain function to the events.Listener interface.
-type listenerFunc func(event interface{}) error
+// The framework propagates a context.Context into every listener so
+// downstream calls (db, cache, http) can carry deadlines and trace
+// metadata; listeners that don't need it can ignore the parameter.
+type listenerFunc func(ctx context.Context, event interface{}) error
 
-func (f listenerFunc) Handle(event interface{}) error { return f(event) }
-func (f listenerFunc) ShouldQueue() bool              { return false }
+func (f listenerFunc) Handle(ctx context.Context, event interface{}) error {
+	return f(ctx, event)
+}
+func (f listenerFunc) ShouldQueue() bool { return false }
 
 // on registers a function listener on the given dispatcher.
-func on(d events.Dispatcher, event string, fn func(event interface{}) error) {
+func on(d events.Dispatcher, event string, fn func(ctx context.Context, event interface{}) error) {
 	d.Listen(event, listenerFunc(fn))
 }
 
@@ -28,7 +35,7 @@ func on(d events.Dispatcher, event string, fn func(event interface{}) error) {
 func Events(logger log.Logger) func(events.Dispatcher) {
 	return func(d events.Dispatcher) {
 		// Request lifecycle events
-		on(d, "request.started", func(e interface{}) error {
+		on(d, "request.started", func(_ context.Context, e interface{}) error {
 			if req, ok := e.(*router.RequestStarted); ok {
 				logger.Debug("Request started",
 					"request_id", req.RequestID,
@@ -39,7 +46,7 @@ func Events(logger log.Logger) func(events.Dispatcher) {
 			return nil
 		})
 
-		on(d, "request.handled", func(e interface{}) error {
+		on(d, "request.handled", func(_ context.Context, e interface{}) error {
 			if req, ok := e.(*router.RequestHandled); ok {
 				logger.Info("Request completed",
 					"request_id", req.RequestID,
@@ -52,7 +59,7 @@ func Events(logger log.Logger) func(events.Dispatcher) {
 			return nil
 		})
 
-		on(d, "request.failed", func(e interface{}) error {
+		on(d, "request.failed", func(_ context.Context, e interface{}) error {
 			if req, ok := e.(*router.RequestFailed); ok {
 				logger.Error("Request failed",
 					"request_id", req.RequestID,
@@ -64,7 +71,7 @@ func Events(logger log.Logger) func(events.Dispatcher) {
 		})
 
 		// Database query events
-		on(d, "query.executed", func(e interface{}) error {
+		on(d, "query.executed", func(_ context.Context, e interface{}) error {
 			if q, ok := e.(*orm.QueryExecuted); ok {
 				logger.Debug("Query executed",
 					"sql", q.SQL,
@@ -76,14 +83,14 @@ func Events(logger log.Logger) func(events.Dispatcher) {
 		})
 
 		// Cache events
-		on(d, "cache.hit", func(e interface{}) error {
+		on(d, "cache.hit", func(_ context.Context, e interface{}) error {
 			if c, ok := e.(*cache.CacheHit); ok {
 				logger.Debug("Cache hit", "key", c.Key)
 			}
 			return nil
 		})
 
-		on(d, "cache.miss", func(e interface{}) error {
+		on(d, "cache.miss", func(_ context.Context, e interface{}) error {
 			if c, ok := e.(*cache.CacheMiss); ok {
 				logger.Debug("Cache miss", "key", c.Key)
 			}
