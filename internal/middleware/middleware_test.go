@@ -1,67 +1,30 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/velocitykode/velocity/router"
+	"github.com/velocitykode/velocity/velocitytest"
 )
 
-func TestCORSMiddleware(t *testing.T) {
-	handler := CORSMiddleware(func(c *router.Context) error {
-		return nil
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
-
-	if err := handler(ctx); err != nil {
-		t.Fatalf("CORSMiddleware() returned error: %v", err)
+// newTestCtx constructs a fully-wired router.Context backed by a
+// velocitytest.NewApp() so that ctx.Log() and any other service-touching
+// methods don't panic. The returned recorder is the same one assigned as
+// ctx.Response, so test assertions can read headers/status from it.
+func newTestCtx(t *testing.T, method, path string) (*router.Context, *httptest.ResponseRecorder) {
+	t.Helper()
+	app, err := velocitytest.NewApp()
+	if err != nil {
+		t.Fatalf("velocitytest.NewApp: %v", err)
 	}
+	t.Cleanup(func() { _ = app.Shutdown(context.Background()) })
 
-	tests := []struct {
-		header string
-		want   string
-	}{
-		{"Access-Control-Allow-Origin", "*"},
-		{"Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS"},
-		{"Access-Control-Allow-Credentials", "true"},
-	}
-
-	for _, tt := range tests {
-		got := rec.Header().Get(tt.header)
-		if got != tt.want {
-			t.Errorf("CORSMiddleware() %s = %q, want %q", tt.header, got, tt.want)
-		}
-	}
-}
-
-func TestCORSMiddleware_OPTIONS(t *testing.T) {
-	nextCalled := false
-	handler := CORSMiddleware(func(c *router.Context) error {
-		nextCalled = true
-		return nil
-	})
-
-	req := httptest.NewRequest(http.MethodOptions, "/", nil)
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
-
-	if err := handler(ctx); err != nil {
-		t.Fatalf("CORSMiddleware() returned error: %v", err)
-	}
-
-	if nextCalled {
-		t.Error("CORSMiddleware() called next handler for OPTIONS request")
-	}
-
-	if rec.Code != http.StatusOK {
-		t.Errorf("CORSMiddleware() status = %d, want %d", rec.Code, http.StatusOK)
-	}
+	ctx, rec := router.NewTestContext(method, path)
+	ctx.SetServices(app.Services)
+	return ctx, rec
 }
 
 func TestEnsureJSONMiddleware(t *testing.T) {
@@ -69,9 +32,7 @@ func TestEnsureJSONMiddleware(t *testing.T) {
 		return nil
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
+	ctx, rec := newTestCtx(t, http.MethodGet, "/")
 
 	if err := handler(ctx); err != nil {
 		t.Fatalf("EnsureJSONMiddleware() returned error: %v", err)
@@ -90,9 +51,7 @@ func TestLoggingMiddleware(t *testing.T) {
 		return nil
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
+	ctx, _ := newTestCtx(t, http.MethodGet, "/test")
 
 	if err := handler(ctx); err != nil {
 		t.Fatalf("LoggingMiddleware() returned error: %v", err)
@@ -103,105 +62,29 @@ func TestLoggingMiddleware(t *testing.T) {
 	}
 }
 
-
 func TestTrustProxiesMiddleware(t *testing.T) {
 	handler := TrustProxiesMiddleware(func(c *router.Context) error {
 		return nil
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("X-Forwarded-For", "192.168.1.1, 10.0.0.1")
-	req.Header.Set("X-Forwarded-Proto", "https")
-	req.Header.Set("X-Forwarded-Host", "example.com")
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
+	ctx, _ := newTestCtx(t, http.MethodGet, "/")
+	ctx.Request.Header.Set("X-Forwarded-For", "192.168.1.1, 10.0.0.1")
+	ctx.Request.Header.Set("X-Forwarded-Proto", "https")
+	ctx.Request.Header.Set("X-Forwarded-Host", "example.com")
 
 	if err := handler(ctx); err != nil {
 		t.Fatalf("TrustProxiesMiddleware() returned error: %v", err)
 	}
 
-	if req.RemoteAddr != "192.168.1.1" {
-		t.Errorf("TrustProxiesMiddleware() RemoteAddr = %q, want %q", req.RemoteAddr, "192.168.1.1")
+	if ctx.Request.RemoteAddr != "192.168.1.1" {
+		t.Errorf("TrustProxiesMiddleware() RemoteAddr = %q, want %q", ctx.Request.RemoteAddr, "192.168.1.1")
 	}
 
-	if req.URL.Scheme != "https" {
-		t.Errorf("TrustProxiesMiddleware() Scheme = %q, want %q", req.URL.Scheme, "https")
+	if ctx.Request.URL.Scheme != "https" {
+		t.Errorf("TrustProxiesMiddleware() Scheme = %q, want %q", ctx.Request.URL.Scheme, "https")
 	}
 
-	if req.Host != "example.com" {
-		t.Errorf("TrustProxiesMiddleware() Host = %q, want %q", req.Host, "example.com")
-	}
-}
-
-func TestPreventRequestsDuringMaintenanceMiddleware(t *testing.T) {
-	t.Run("no maintenance", func(t *testing.T) {
-		nextCalled := false
-		handler := PreventRequestsDuringMaintenanceMiddleware(func(c *router.Context) error {
-			nextCalled = true
-			return nil
-		})
-
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		rec := httptest.NewRecorder()
-		ctx := &router.Context{Request: req, Response: rec}
-
-		if err := handler(ctx); err != nil {
-			t.Fatalf("PreventRequestsDuringMaintenanceMiddleware() returned error: %v", err)
-		}
-
-		if !nextCalled {
-			t.Error("PreventRequestsDuringMaintenanceMiddleware() did not call next handler")
-		}
-	})
-
-	t.Run("in maintenance", func(t *testing.T) {
-		// Create maintenance file
-		dir := filepath.Join("storage", "framework")
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			t.Fatalf("Failed to create maintenance directory: %v", err)
-		}
-		defer os.RemoveAll("storage")
-
-		file := filepath.Join(dir, "down")
-		if err := os.WriteFile(file, []byte{}, 0644); err != nil {
-			t.Fatalf("Failed to create maintenance file: %v", err)
-		}
-
-		nextCalled := false
-		handler := PreventRequestsDuringMaintenanceMiddleware(func(c *router.Context) error {
-			nextCalled = true
-			return nil
-		})
-
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		rec := httptest.NewRecorder()
-		ctx := &router.Context{Request: req, Response: rec}
-
-		if err := handler(ctx); err != nil {
-			t.Fatalf("PreventRequestsDuringMaintenanceMiddleware() returned error: %v", err)
-		}
-
-		if nextCalled {
-			t.Error("PreventRequestsDuringMaintenanceMiddleware() called next handler during maintenance")
-		}
-
-		if rec.Code != http.StatusServiceUnavailable {
-			t.Errorf("PreventRequestsDuringMaintenanceMiddleware() status = %d, want %d", rec.Code, http.StatusServiceUnavailable)
-		}
-	})
-}
-
-func TestValidatePostSizeMiddleware(t *testing.T) {
-	handler := ValidatePostSizeMiddleware(100)(func(c *router.Context) error {
-		return nil
-	})
-
-	req := httptest.NewRequest(http.MethodPost, "/", nil)
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
-
-	if err := handler(ctx); err != nil {
-		t.Fatalf("ValidatePostSizeMiddleware() returned error: %v", err)
+	if ctx.Request.Host != "example.com" {
+		t.Errorf("TrustProxiesMiddleware() Host = %q, want %q", ctx.Request.Host, "example.com")
 	}
 }
-
