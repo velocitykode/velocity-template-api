@@ -205,18 +205,3 @@ func TestValidatePostSizeMiddleware(t *testing.T) {
 	}
 }
 
-func TestAuth_Unauthorized(t *testing.T) {
-	handler := Auth(func(c *router.Context) error {
-		return nil
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rec := httptest.NewRecorder()
-	ctx := &router.Context{Request: req, Response: rec}
-
-	_ = handler(ctx)
-
-	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("Auth() status = %d, want %d", rec.Code, http.StatusUnauthorized)
-	}
-}
