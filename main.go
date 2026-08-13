@@ -31,7 +31,7 @@ func main() {
 	}
 
 	if err := v.
-		Providers(app.Configure).
+		Modules(app.Configure).
 		Middleware(app.Middleware).
 		Routes(routes.Register).
 		Commands(commands.Register).

@@ -19,7 +19,7 @@ type listenerFunc func(ctx context.Context, event interface{}) error
 func (f listenerFunc) Handle(ctx context.Context, event interface{}) error {
 	return f(ctx, event)
 }
-func (f listenerFunc) ShouldQueue() bool { return false }
+func (f listenerFunc) Async() bool { return false }
 
 // on registers a function listener on the given dispatcher.
 func on(d events.Dispatcher, event string, fn func(ctx context.Context, event interface{}) error) {
