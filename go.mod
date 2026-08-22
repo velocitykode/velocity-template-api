@@ -2,7 +2,7 @@ module {{MODULE_NAME}}
 
 go 1.26.6
 
-require github.com/velocitykode/velocity v0.76.0
+require github.com/velocitykode/velocity v0.76.1
 
 require (
 	filippo.io/edwards25519 v1.1.1 // indirect
