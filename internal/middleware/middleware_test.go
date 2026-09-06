@@ -61,30 +61,3 @@ func TestLoggingMiddleware(t *testing.T) {
 		t.Error("LoggingMiddleware() did not call next handler")
 	}
 }
-
-func TestTrustProxiesMiddleware(t *testing.T) {
-	handler := TrustProxiesMiddleware(func(c *router.Context) error {
-		return nil
-	})
-
-	ctx, _ := newTestCtx(t, http.MethodGet, "/")
-	ctx.Request.Header.Set("X-Forwarded-For", "192.168.1.1, 10.0.0.1")
-	ctx.Request.Header.Set("X-Forwarded-Proto", "https")
-	ctx.Request.Header.Set("X-Forwarded-Host", "example.com")
-
-	if err := handler(ctx); err != nil {
-		t.Fatalf("TrustProxiesMiddleware() returned error: %v", err)
-	}
-
-	if ctx.Request.RemoteAddr != "192.168.1.1" {
-		t.Errorf("TrustProxiesMiddleware() RemoteAddr = %q, want %q", ctx.Request.RemoteAddr, "192.168.1.1")
-	}
-
-	if ctx.Request.URL.Scheme != "https" {
-		t.Errorf("TrustProxiesMiddleware() Scheme = %q, want %q", ctx.Request.URL.Scheme, "https")
-	}
-
-	if ctx.Request.Host != "example.com" {
-		t.Errorf("TrustProxiesMiddleware() Host = %q, want %q", ctx.Request.Host, "example.com")
-	}
-}

@@ -22,8 +22,7 @@ import (
 // template doesn't ship browser-rendered routes.)
 func Middleware(m *velocity.MiddlewareStack) {
 	m.Global(
-		middleware.LoggingMiddleware,      // Log all requests (no framework export yet)
-		middleware.TrustProxiesMiddleware, // Handle X-Forwarded-* headers (no framework export yet)
+		middleware.LoggingMiddleware, // Log all requests (no framework export yet)
 		router.CORS(router.CORSConfig{ // Framework CORS (velocity/router/cors.go)
 			AllowedOrigins:   corsOrigins(),
 			AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
