@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"{{MODULE_NAME}}/database/seeders"
 	"{{MODULE_NAME}}/internal/app"
 	"{{MODULE_NAME}}/internal/commands"
 	"{{MODULE_NAME}}/routes"
@@ -35,6 +36,7 @@ func main() {
 		Middleware(app.Middleware).
 		Routes(routes.Register).
 		Commands(commands.Register).
+		Seeders(seeders.Register).
 		Events(app.Events(v.Log)).
 		Serve(); err != nil {
 		log.Fatal(err)
