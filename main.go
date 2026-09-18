@@ -16,6 +16,7 @@ import (
 	// cache, modernc/postgres/mysql/sqlite orm, memory/redis/database queue,
 	// local/s3 storage) so config can select any of them at runtime.
 	_ "github.com/velocitykode/velocity/cache/standard"
+	_ "github.com/velocitykode/velocity/log/standard"
 	_ "github.com/velocitykode/velocity/orm/standard"
 	_ "github.com/velocitykode/velocity/queue/standard"
 	_ "github.com/velocitykode/velocity/storage/standard"
