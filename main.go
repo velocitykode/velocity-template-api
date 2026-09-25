@@ -39,6 +39,7 @@ func main() {
 		Commands(commands.Register).
 		Seeders(seeders.Register).
 		Events(app.Events(v.Log)).
+		Errors(app.Errors). // optional: add rules to the error handler
 		Serve(); err != nil {
 		log.Fatal(err)
 	}

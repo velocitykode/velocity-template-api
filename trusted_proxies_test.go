@@ -17,6 +17,7 @@ import (
 	"github.com/velocitykode/velocity"
 	"github.com/velocitykode/velocity/auth"
 	"github.com/velocitykode/velocity/auth/drivers/schemes"
+	"github.com/velocitykode/velocity/problem"
 	"github.com/velocitykode/velocity/router"
 	velhttp "github.com/velocitykode/velocity/testing/http"
 	"github.com/velocitykode/velocity/velocitytest"
@@ -79,7 +80,7 @@ func proxyTestApp(t *testing.T, trustedProxies []string) (*velocity.App, *observ
 						Password string `json:"password"`
 					}
 					if err := c.Bind(&body); err != nil {
-						return router.NewHTTPError(http.StatusBadRequest, "invalid body")
+						return problem.BadRequest("invalid body")
 					}
 					ok, err := auth.FromContext(c).Attempt(c.Response, c.Request, map[string]any{"email": body.Email, "password": body.Password})
 					if err != nil || !ok {
