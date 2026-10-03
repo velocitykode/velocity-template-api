@@ -63,7 +63,7 @@ func Events(logger log.Logger) func(events.Dispatcher) {
 			if req, ok := e.(*router.RequestFailed); ok {
 				logger.Error("Request failed",
 					"request_id", req.RequestID,
-					"error", req.Error,
+					"error", req.Err,
 					"recovered", req.Recovered,
 				)
 			}

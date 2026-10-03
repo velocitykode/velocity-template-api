@@ -17,6 +17,7 @@ import (
 	"github.com/velocitykode/velocity"
 	"github.com/velocitykode/velocity/auth"
 	"github.com/velocitykode/velocity/auth/drivers/schemes"
+	"github.com/velocitykode/velocity/contract"
 	"github.com/velocitykode/velocity/problem"
 	"github.com/velocitykode/velocity/router"
 	velhttp "github.com/velocitykode/velocity/testing/http"
@@ -82,7 +83,11 @@ func proxyTestApp(t *testing.T, trustedProxies []string) (*velocity.App, *observ
 					if err := c.Bind(&body); err != nil {
 						return problem.BadRequest("invalid body")
 					}
-					ok, err := auth.FromContext(c).Attempt(c.Response, c.Request, map[string]any{"email": body.Email, "password": body.Password})
+					manager, err := c.Auth()
+					if err != nil {
+						return err
+					}
+					ok, err := manager.Attempt(c.Response, c.Request, map[string]any{"email": body.Email, "password": body.Password})
 					if err != nil || !ok {
 						return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 					}
@@ -186,24 +191,24 @@ func (*probeUser) GetAuthPassword() string  { return "unused-test-hash" }
 func (*probeUser) GetRememberToken() string { return "" }
 func (*probeUser) SetRememberToken(string)  {}
 
-func (u *countingUsers) FindByID(any) (auth.Authenticatable, error) { return &probeUser{}, nil }
-func (u *countingUsers) FindByIDCtx(context.Context, any) (auth.Authenticatable, error) {
+func (u *countingUsers) FindByID(any) (contract.Authenticatable, error) { return &probeUser{}, nil }
+func (u *countingUsers) FindByIDCtx(context.Context, any) (contract.Authenticatable, error) {
 	return &probeUser{}, nil
 }
-func (u *countingUsers) FindByCredentials(map[string]any) (auth.Authenticatable, error) {
+func (u *countingUsers) FindByCredentials(map[string]any) (contract.Authenticatable, error) {
 	return &probeUser{}, nil
 }
-func (u *countingUsers) FindByCredentialsCtx(context.Context, map[string]any) (auth.Authenticatable, error) {
+func (u *countingUsers) FindByCredentialsCtx(context.Context, map[string]any) (contract.Authenticatable, error) {
 	return &probeUser{}, nil
 }
-func (u *countingUsers) ValidateCredentials(auth.Authenticatable, map[string]any) bool {
+func (u *countingUsers) ValidateCredentials(contract.Authenticatable, map[string]any) bool {
 	u.mu.Lock()
 	u.checks++
 	u.mu.Unlock()
 	return false
 }
-func (u *countingUsers) UpdateRememberToken(auth.Authenticatable, string) error { return nil }
-func (u *countingUsers) UpdateRememberTokenCtx(context.Context, auth.Authenticatable, string) error {
+func (u *countingUsers) UpdateRememberToken(contract.Authenticatable, string) error { return nil }
+func (u *countingUsers) UpdateRememberTokenCtx(context.Context, contract.Authenticatable, string) error {
 	return nil
 }
 func (u *countingUsers) verified() int {
