@@ -1,6 +1,6 @@
 module {{MODULE_NAME}}
 
-go 1.26.6
+go 1.26.10
 
 require github.com/velocitykode/velocity v0.96.1
 
@@ -62,10 +62,10 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/velocitykode/prism v0.16.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/crypto v0.52.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/text v0.39.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	modernc.org/libc v1.72.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect

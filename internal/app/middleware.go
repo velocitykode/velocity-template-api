@@ -7,6 +7,7 @@ import (
 	"{{MODULE_NAME}}/internal/middleware"
 
 	"github.com/velocitykode/velocity"
+	"github.com/velocitykode/velocity/maintenance"
 	"github.com/velocitykode/velocity/router"
 )
 
@@ -29,7 +30,7 @@ func Middleware(m *velocity.MiddlewareStack) {
 			AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Requested-With"},
 			AllowCredentials: true,
 		}),
-		velocity.PreventRequestsDuringMaintenance(),    // Framework maintenance gate (velocity/maintenance.go)
+		maintenance.Middleware(m.Maintenance()),        // Framework maintenance gate (velocity/maintenance)
 		router.BodyLimit(10<<20),                       // Framework body-limit (velocity/router/body_limit.go) - 10MB
 		middleware.TrimStringsMiddleware,               // Trim whitespace from string inputs
 		middleware.ConvertEmptyStringsToNullMiddleware, // Convert "" to nil
